@@ -1,6 +1,13 @@
-# maker-world-extension
-A simple extension adds additional functionality to the Maker World website for designers.
+Maker World Extension
+=====================
+
+A simple extension that adds additional functionality to the Maker World website for designers.
 
 Todos:
-[] Add reward points to the print profiles page. 
-[] Add settings to adjust the number of points to get a gift card in the user's region, the local currancy, and the dollar amount awarded. 
+------
+
+-   [ ]  Add reward points to the print profiles page.
+-   [ ]  Add settings to adjust:
+    -   The number of points required to receive a gift card in the user's region.
+    -   The local currency.
+    -   The dollar amount awarded.
