@@ -1,9 +1,11 @@
+// Returns the handle (username) from the current URL, or null if not found
 function getHandleFromURL() {
   const url = window.location.href;
   const match = url.match(/@(\w+)/);
   return match ? match[1] : null;
 }
 
+// Calculates the reward points based on download and print counts
 function calculatePoints(downloadCount, printCount) {
   const totalDownloads = downloadCount + printCount * 2;
   const milestones = [10, 20, 30, 40, 50];
@@ -18,7 +20,7 @@ function calculatePoints(downloadCount, printCount) {
   return points;
 }
 
-// Styling helper function (using Option 1 with <span> for clarity)
+// Creates a styled HTML element with a title and value
 function createStyledElement(title, value) {
   const element = document.createElement('p');
   const titleSpan = document.createElement('span');
@@ -30,6 +32,7 @@ function createStyledElement(title, value) {
   return element;
 }
 
+// Updates the design card on the page with additional information (Hot Score, Reward Points, Gift Card Value, and Contest Name)
 function updateCardOnPage(design) {
   const points = calculatePoints(design.downloadCount, design.printCount);
   const pointsToDollarsConversionRate = 40 / 490;
@@ -62,6 +65,7 @@ function updateCardOnPage(design) {
   }
 }
 
+// Injects the updated design cards into the page based on the provided data and handle
 function injectUpdatedCards(data, handle) {
   // Notice 'handle' is now a parameter
   data.hits.filter((hit) => hit.designCreator.handle === handle).forEach(updateCardOnPage);
@@ -70,6 +74,7 @@ function injectUpdatedCards(data, handle) {
 let isFetchingMakerData = false;
 let mergedData = [];
 
+// Handles the maker page by fetching and merging data, processing designs, and setting up a MutationObserver
 async function handleMakerPage(handle) {
   try {
     if (isFetchingMakerData) {
@@ -81,8 +86,6 @@ async function handleMakerPage(handle) {
 
     const makerData = await fetchAndExtractMakerData(handle);
     mergedData = await fetchAndMergeLikes(handle, makerData);
-
-    // console.log('merged data', mergedData);
 
     // Process initial set of designs
     mergedData.forEach(updateCardOnPage);
@@ -96,6 +99,7 @@ async function handleMakerPage(handle) {
   }
 }
 
+// Sets up a MutationObserver to watch for new design elements and process them accordingly
 function setupMutationObserver() {
   const observer = new MutationObserver((mutationsList, observer) => {
     for (const mutation of mutationsList) {
@@ -177,11 +181,10 @@ async function fetchAndExtractMakerData(handle) {
     offset += limit;
   } while (totalFetched < totalAvailable);
 
-  // console.log('All designs fetched:', allDesigns);
   return allDesigns;
 }
 
-// Fetches likes data in batches
+// Fetches and merges likes data into the maker data
 async function fetchAndMergeLikes(handle, makerData) {
   let offset = 0;
   let allLikesData = []; // Store all fetched likes
@@ -224,8 +227,8 @@ function mergeLikesIntoMakerData(makerData, likesData) {
   return makerData;
 }
 
+// Handles the model page by fetching and displaying model-specific information (Reward Points, Gift Card Value, and Contest Name)
 function handleModelPage(modelId) {
-  console.log('handleModelPage', modelId);
   fetch(`https://makerworld.com/en/models/${modelId}`)
     .then((response) => response.text())
     .then((htmlString) => {
@@ -283,7 +286,7 @@ function checkPageTypeAndLoadData() {
   }
 }
 
-// Call this function when the script is first loaded
+// Checks the current page type (maker or model) and loads the appropriate data
 checkPageTypeAndLoadData();
 
 // Then setup your interval to check for URL changes
