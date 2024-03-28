@@ -1,5 +1,7 @@
 # Unofficial MakerWorld Assistant Chrome Extension
 
+[Chrome Store: An Unofficial MakerWorld Extension](https://chromewebstore.google.com/detail/an-unofficial-makerworld/pkpnnfiegdfdidhbhnecpbnmlgekanbl)
+
 This is an unofficial Chrome extension that adds additional functionality to the [MakerWorld](https://makerworld.com) website for 3D printing designers. The extension enhances the design cards on the maker and model pages by displaying additional information such as Hot Score, Reward Points, Gift Card Value, and Contest Name (if applicable).
 
 ## Features
