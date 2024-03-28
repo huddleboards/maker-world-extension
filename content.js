@@ -20,23 +20,133 @@ function calculatePoints(downloadCount, printCount) {
   return points;
 }
 
-// Creates a styled HTML element with a title and value
-function createStyledElement(title, value) {
-  const element = document.createElement('p');
-  const titleSpan = document.createElement('span');
-  titleSpan.textContent = `${title}: `;
-  titleSpan.style.fontWeight = 'bold';
-  element.appendChild(titleSpan);
-  element.append(value);
-  element.style.fontSize = '14px';
-  return element;
+// Function to calculate and return the print profile score for the current user
+function calculatePrintProfileScore(design) {
+  let totalPoints = 0;
+
+  design.instances.forEach((instance) => {
+    // Calculate the average rating
+    const averageRating = instance.ratingScoreTotal / instance.ratingCount;
+
+    // Check if the instance is created by the current user and has an average rating of 4 or higher
+    if (instance.instanceCreator.uid === design.designCreator.uid && averageRating >= 4) {
+      // Calculate points based on the given reward structure
+      let instancePoints = 0;
+      const downloadsEquivalent = instance.downloadCount + instance.printCount * 2;
+      const milestones = [10, 20, 30, 40, 50];
+
+      milestones.forEach((milestone) => {
+        if (downloadsEquivalent >= milestone) {
+          instancePoints += 8; // +8 points for reaching each milestone
+        }
+      });
+
+      if (downloadsEquivalent > 50) {
+        instancePoints += Math.floor((downloadsEquivalent - 50) / 25) * 4; // +4 points for every 25 downloads beyond 50
+      }
+
+      totalPoints += instancePoints;
+    }
+  });
+
+  return totalPoints;
 }
+
+// Function to create an SVG element from SVG content in a file
+function createSvgElementFromFile(svgFilePath, iconClasses, tooltipText, callback) {
+  // Get the full URL to the SVG file within the Chrome extension
+  const fullSvgFilePath = chrome.runtime.getURL(svgFilePath);
+
+  // Fetch the SVG content from the full file path
+  fetch(fullSvgFilePath)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok, status: ${response.status}`);
+      }
+      return response.text();
+    })
+    .then((svgContent) => {
+      const svgElement = new DOMParser().parseFromString(svgContent, 'image/svg+xml').documentElement;
+      svgElement.setAttribute('class', iconClasses);
+      svgElement.setAttribute('width', '16');
+      svgElement.setAttribute('height', '16');
+
+      // Add a tooltip using the 'title' element inside the SVG
+      const titleElement = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      titleElement.textContent = tooltipText; // Set the tooltip text
+      svgElement.insertBefore(titleElement, svgElement.firstChild); // Add the title at the beginning of the SVG
+
+      callback(svgElement); // Execute the callback function passing the SVG element
+    })
+    .catch((error) => console.error('Error fetching SVG:', error));
+}
+
+// Creates a styled element with the provided svg path and value
+function createStyledElementWithIcon(svgFilePath, iconClasses, title, value, suffix = '') {
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.alignItems = 'center';
+  container.style.color = '#898989'; // Set text color
+  container.style.fontSize = '12px';
+  container.style.marginBottom = '4px';
+
+  // Add the SVG icon with a tooltip to the container
+  createSvgElementFromFile(svgFilePath, iconClasses, title, (svgElement) => {
+    container.insertBefore(svgElement, container.firstChild); // Prepend SVG to the container
+    svgElement.style.marginRight = '4px'; // Add space between icon and text
+  });
+
+  // Add the value to the container
+  const valueSpan = document.createElement('span');
+  valueSpan.textContent = `${value}${suffix ? ' ' + suffix : ''}`;
+  container.appendChild(valueSpan);
+
+  return container;
+}
+
+function createButtonElementWithIcon(svgFilePath, buttonText, onClickCallback) {
+  const button = document.createElement('button');
+  button.style.display = 'inline-flex';
+  button.style.alignItems = 'center';
+  button.style.border = 'none';
+  button.style.background = 'none';
+  button.style.padding = '0';
+  button.style.paddingBottom = '4px';
+  button.style.cursor = 'pointer';
+  button.style.color = '#898989'; // Matching other text color
+  button.style.fontSize = '12px';
+  button.style.height = '16px'; // Adjust to match the height of other elements
+
+  // Fetch the SVG icon
+  createSvgElementFromFile(svgFilePath, '', '', (svgElement) => {
+    svgElement.style.marginRight = '4px'; // Space between icon and text
+    button.insertBefore(svgElement, button.firstChild); // Insert SVG before text
+  });
+
+  // Add the button text
+  const textNode = document.createTextNode(buttonText);
+  button.appendChild(textNode);
+
+  // Set click callback
+  button.onclick = onClickCallback;
+
+  return button;
+}
+
+// Create and append styled elements
+const hotSvgPath = 'icons/hot.svg';
+const downloadSvgPath = 'icons/download.svg';
+const printSvgPath = 'icons/print.svg';
+const moneySvgPath = 'icons/money.svg';
+const contestSvgPath = 'icons/contest.svg';
 
 // Updates the design card on the page with additional information (Hot Score, Reward Points, Gift Card Value, and Contest Name)
 function updateCardOnPage(design) {
-  const points = calculatePoints(design.downloadCount, design.printCount);
-  const pointsToDollarsConversionRate = 40 / 490;
-  const dollarValue = (points * pointsToDollarsConversionRate).toFixed(2);
+  const downloadPoints = calculatePoints(design.downloadCount, design.printCount);
+  const printProfilePoints = calculatePrintProfileScore(design);
+  const totalPoints = downloadPoints + printProfilePoints;
+  const pointsToDollarsConversionRate = 40 / 490; // todo - update the conversion rate through a local storage or API call
+  const dollarValue = (totalPoints * pointsToDollarsConversionRate).toFixed(2);
 
   // Select the link element that contains the design ID in its href
   const linkSelector = `a[href="/en/models/${design.id}"]`;
@@ -49,18 +159,137 @@ function updateCardOnPage(design) {
     if (cardContainer) {
       // Mark the element as processed to avoid duplicate processing
       linkElement.setAttribute('data-processed', 'true');
-      // Create and append styled elements
-      if (design.hotScore !== undefined) {
-        cardContainer.appendChild(createStyledElement('Hot Score', design.hotScore));
-      }
-      cardContainer.appendChild(createStyledElement('Reward Points', points));
-      cardContainer.appendChild(createStyledElement('Value Towards Gift Card', `$${dollarValue}`));
-      cardContainer.appendChild(
-        createStyledElement(
-          'Contest',
-          design.contest && design.contest.contestName ? design.contest.contestName : 'N/A'
-        )
+
+      // Create grid container with an additional row for buttons
+      const gridContainer = document.createElement('div');
+      gridContainer.style.display = 'grid';
+      gridContainer.style.gridTemplateColumns = '1fr 1fr';
+      gridContainer.style.marginLeft = '12px';
+      gridContainer.style.marginRight = '12px';
+      gridContainer.style.gap = '8px';
+
+      // Find the default instance ID if available
+      const defaultInstance = design.instances.find((instance) => instance.isDefault);
+      const defaultInstanceId = defaultInstance ? defaultInstance.id : null;
+
+      // Create and insert buttons directly into the grid, aligned as required
+      const openButton = createButtonElementWithIcon('icons/open.svg', 'Open', () => {
+        // Ensure there's a default instance ID to work with
+        if (defaultInstanceId) {
+          // Construct the API URL
+          const apiUrl = `https://makerworld.com/api/v1/design-service/instance/${defaultInstanceId}/f3mf?type=download`;
+
+          // Make the API request
+          fetch(apiUrl)
+            .then((response) => response.json())
+            .then((data) => {
+              // Construct the custom URL scheme using the response data
+              const openUrl = `bambustudio://open?file=${encodeURIComponent(data.url)}&name=${encodeURIComponent(
+                data.name
+              )}`;
+
+              // Open the custom URL scheme
+              window.location.href = openUrl;
+            })
+            .catch((error) => {
+              console.error('Error fetching instance details:', error);
+            });
+        } else {
+          console.error('Default instance ID not found');
+        }
+      });
+      openButton.style.gridArea = '1 / 1 / 2 / 2'; // Position the "Open" button
+      gridContainer.appendChild(openButton);
+
+      const downloadButton = createButtonElementWithIcon('icons/download.svg', 'Download', () => {
+        // Ensure there's a default instance ID to work with
+        if (defaultInstanceId) {
+          // Construct the API URL
+          const apiUrl = `https://makerworld.com/api/v1/design-service/instance/${defaultInstanceId}/f3mf?type=download`;
+
+          // Make the API request
+          fetch(apiUrl)
+            .then((response) => response.json())
+            .then((data) => {
+              // Open the custom URL scheme
+              window.location.href = data.url;
+            })
+            .catch((error) => {
+              console.error('Error fetching instance details:', error);
+            });
+        } else {
+          console.error('Default instance ID not found');
+        }
+      });
+      downloadButton.style.gridArea = '1 / 2 / 2 / 3'; // Position the "Download" button
+      downloadButton.style.justifySelf = 'end'; // Align the button to the end of the grid
+      gridContainer.appendChild(downloadButton);
+
+      // Monetary Value - insert after buttons
+      const monetaryValueElement = createStyledElementWithIcon(
+        moneySvgPath,
+        'fa-money-class',
+        'Monetary Value',
+        `${dollarValue}`
       );
+      monetaryValueElement.style.justifySelf = 'start';
+      gridContainer.appendChild(monetaryValueElement);
+
+      // Only add the Hot Score element if hotScore exists and is greater than zero
+      if (design.hotScore && design.hotScore > 0) {
+        const hotScoreElement = createStyledElementWithIcon(
+          hotSvgPath,
+          'fa-hot-class',
+          'Hot Score',
+          design.hotScore,
+          'score'
+        );
+        hotScoreElement.style.justifySelf = 'end';
+        gridContainer.appendChild(hotScoreElement);
+      } else {
+        // If no Hot Score, add an empty div to keep the grid layout
+        const emptyDiv = document.createElement('div');
+        gridContainer.appendChild(emptyDiv);
+      }
+
+      // Download Rewards - left-aligned
+      const downloadRewardsElement = createStyledElementWithIcon(
+        downloadSvgPath,
+        'fa-download-class',
+        'Download Rewards',
+        downloadPoints,
+        'points'
+      );
+      downloadRewardsElement.style.justifySelf = 'start';
+
+      // Print Profile Rewards - right-aligned
+      const printProfileRewardsElement = createStyledElementWithIcon(
+        printSvgPath,
+        'fa-download-class',
+        'Profile Rewards',
+        printProfilePoints,
+        'points'
+      );
+      printProfileRewardsElement.style.justifySelf = 'end';
+
+      // Add the second row elements
+      gridContainer.appendChild(downloadRewardsElement);
+      gridContainer.appendChild(printProfileRewardsElement);
+
+      // Add the grid container to the card container
+      cardContainer.appendChild(gridContainer);
+
+      // Check for contest and add to a new row if it exists
+      if (design.contest && design.contest.contestName) {
+        const contestElement = createStyledElementWithIcon(
+          contestSvgPath,
+          'fa-contest-class',
+          'Contest',
+          design.contest.contestName
+        );
+        contestElement.style.gridColumn = '1 / -1'; // Span across all columns
+        gridContainer.appendChild(contestElement);
+      }
     }
   }
 }
@@ -244,23 +473,52 @@ function handleModelPage(modelId) {
       const modelData = pageData.props?.pageProps?.design; // Replace with the correct path to your data
 
       if (modelData && modelData.id.toString() === modelId) {
-        const points = calculatePoints(modelData.downloadCount, modelData.printCount);
-        const pointsToDollarsConversionRate = 40 / 490;
-        const dollarValue = (points * pointsToDollarsConversionRate).toFixed(2);
+        const downloadPoints = calculatePoints(modelData.downloadCount, modelData.printCount);
+        const printProfilePoints = calculatePrintProfileScore(modelData);
+        const totalPoints = downloadPoints + printProfilePoints;
+        const pointsToDollarsConversionRate = 40 / 490; // todo - update the conversion rate through a local storage or API call
+        const dollarValue = (totalPoints * pointsToDollarsConversionRate).toFixed(2);
 
         // You would select a container element on your model specific page to append this info
         // This should be the element where you want to show the download points and estimated gift card value
         const modelInfoContainer = document.querySelector('.model_info'); // Replace with the correct selector for your page
 
         if (modelInfoContainer) {
-          modelInfoContainer.appendChild(createStyledElement('Reward Points', points));
-          modelInfoContainer.appendChild(createStyledElement('Value Towards Gift Card', `$${dollarValue}`));
-          modelInfoContainer.appendChild(
-            createStyledElement(
-              'Contest',
-              modelData.contest && modelData.contest.contestName ? modelData.contest.contestName : 'N/A'
-            )
+          const downloadRewardsElement = createStyledElementWithIcon(
+            downloadSvgPath,
+            'fa-download-class',
+            'Download Rewards',
+            downloadPoints,
+            'points'
           );
+          const printProfileRewardsElement = createStyledElementWithIcon(
+            printSvgPath,
+            'fa-print-class',
+            'Print Profile Rewards',
+            printProfilePoints,
+            'points'
+          );
+          // Monetary Value - insert after buttons
+          const monetaryValueElement = createStyledElementWithIcon(
+            moneySvgPath,
+            'fa-money-class',
+            'Monetary Value',
+            `${dollarValue}`
+          );
+
+          modelInfoContainer.appendChild(downloadRewardsElement);
+          modelInfoContainer.appendChild(printProfileRewardsElement);
+          modelInfoContainer.appendChild(monetaryValueElement);
+          // Add contest information if available
+          if (modelData.contest && modelData.contest.contestName) {
+            const contestElement = createStyledElementWithIcon(
+              contestSvgPath,
+              'fa-contest-class',
+              'Contest',
+              modelData.contest.contestName
+            );
+            modelInfoContainer.appendChild(contestElement);
+          }
         } else {
           console.error('Could not find the model info container on the page.');
         }
