@@ -1,14 +1,44 @@
-Maker World Extension
-=====================
+# Unofficial MakerWorld Assistant Chrome Extension
 
-A simple extension that adds additional functionality to the Maker World website for designers.
+This is an unofficial Chrome extension that adds additional functionality to the [MakerWorld](https://makerworld.com) website for 3D printing designers. The extension enhances the design cards on the maker and model pages by displaying additional information such as Hot Score, Reward Points, Gift Card Value, and Contest Name (if applicable).
+
+## Features
+
+- **Hot Score**: Displays the Hot Score for each design if available.
+- **Reward Points**: Shows the Reward Points earned based on the download and print counts.
+- **Gift Card Value**: Estimates the approximate monetary value (in dollars) of the earned Reward Points.
+- **Contest Name**: If the design is part of a contest, the contest name is displayed.
+- **Open** and **Download** buttons: Allows users to easily open or download the default instance of a design directly from the design card.
+
+## Installation
+
+1. Clone or download the repository to your local machine.
+2. Open Google Chrome and navigate to `chrome://extensions/`.
+3. Enable the "Developer mode" toggle switch in the top-right corner of the extensions page.
+4. Click the "Load unpacked" button and select the folder containing the extension's files.
+
+The extension should now be installed and active.
+
+## Usage
+
+Once the extension is installed, it will automatically enhance the design cards on the maker and model pages of the MakerWorld website. No additional setup or configuration is required.
+
+## Development
+
+This extension is built using JavaScript and follows a content script approach to interact with the MakerWorld website. The main logic is contained within the `content.js` file, which is injected into the website's context.
+
+If you wish to modify or extend the extension's functionality, you can edit the `content.js` file and reload the extension in the browser.
+
+## Contributing
+
+Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 Todos:
-------
-
--   [X]  Add reward points from the print profiles.
--   [X]  Add a download button by models, that downloads the top rated profile or lists out the intances on this page so they can download from the maker page.
--   [ ]  Add a progress indicator to the next reward point level. So if you have 28 points to earn the next 30, it would show a little progress indicator.
+-   [ ]  Add a progress indicator to the next reward transaction.
 -   [ ]  Add settings to adjust:
     -   The number of points required to receive a gift card in the user's region.
     -   The local currency.
