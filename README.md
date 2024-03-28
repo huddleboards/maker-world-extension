@@ -4,6 +4,8 @@
 
 This is an unofficial Chrome extension that adds additional functionality to the [MakerWorld](https://makerworld.com) website for 3D printing designers. The extension enhances the design cards on the maker and model pages by displaying additional information such as Hot Score, Reward Points, Gift Card Value, and Contest Name (if applicable).
 
+![user profile](https://github.com/huddleboards/maker-world-extension/blob/main/images/user-profile.png?raw=true)
+
 ## Features
 
 - **Hot Score**: Displays the Hot Score for each design if available.
