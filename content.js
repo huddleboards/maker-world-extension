@@ -5,6 +5,36 @@ function getHandleFromURL() {
   return match ? match[1] : null;
 }
 
+// Function to get the user's selected region from local storage
+function getStoredRegion() {
+  const region = localStorage.getItem('userRegion');
+  return region || 'Global'; // Default to 'Global' if nothing is stored
+}
+
+/**
+ * Retrieves the conversion rate for a given region.
+ * This includes the number of points required for the base currency amount
+ * and the currency symbol.
+ *
+ * @param {string} region The selected region by the user.
+ * @returns {object} An object containing the points needed for the base amount, the base amount, and the currency symbol.
+ */
+function getConversionRate(region) {
+  // Define conversion rates for each region
+  const rates = {
+    US: { points: 490, rate: 40, symbol: '$' },
+    EU: { points: 524, rate: 40, symbol: '€' },
+    UK: { points: 535, rate: 35, symbol: '£' },
+    CA: { points: 504, rate: 55, symbol: 'C$' },
+    AU: { points: 511, rate: 65, symbol: 'A$' },
+    JP: { points: 502, rate: 5300, symbol: '¥' },
+    Global: { points: 490, rate: 40, symbol: '$' }, // Assuming Global uses USD
+  };
+
+  // Return the rate for the specified region, or a default value if the region isn't specified
+  return rates[region] || rates['Global'];
+}
+
 // Calculates the reward points based on download and print counts
 function calculatePoints(downloadCount, printCount) {
   const totalDownloads = downloadCount + printCount * 2;
@@ -142,11 +172,15 @@ const contestSvgPath = 'icons/contest.svg';
 
 // Updates the design card on the page with additional information (Hot Score, Reward Points, Gift Card Value, and Contest Name)
 function updateCardOnPage(design) {
+  const selectedRegion = getStoredRegion(); // Get the region from local storage
+  const { points, rate, symbol } = getConversionRate(selectedRegion);
+
+  console.log('Selected Region:', selectedRegion, 'Points:', points, 'Rate:', rate, 'Symbol:', symbol); // Example: "Selected Region: US Points: 490 Rate: 40 Symbol: $
+
   const downloadPoints = calculatePoints(design.downloadCount, design.printCount);
   const printProfilePoints = calculatePrintProfileScore(design);
   const totalPoints = downloadPoints + printProfilePoints;
-  const pointsToDollarsConversionRate = 40 / 490; // todo - update the conversion rate through a local storage or API call
-  const dollarValue = (totalPoints * pointsToDollarsConversionRate).toFixed(2);
+  const dollarValue = ((totalPoints / points) * rate).toFixed(2);
 
   // Select the link element that contains the design ID in its href
   const linkSelector = `a[href="/en/models/${design.id}"]`;
