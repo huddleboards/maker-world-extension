@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function saveRegion() {
   const region = document.getElementById('regionSelector').value;
-  localStorage.setItem('userRegion', region);
+  localStorage.setItem('userRegion', region); // TODO change to chrome.storage.local.set
 }
 
 function loadRegion() {
