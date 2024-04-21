@@ -1,19 +1,21 @@
-// popup.js
 document.addEventListener('DOMContentLoaded', () => {
-  loadRegion(); // Call loadRegion to set the selector to the stored value
+  const regionSelect = document.getElementById('region-select');
 
-  const selector = document.getElementById('regionSelector');
-  selector.addEventListener('change', saveRegion); // Add event listener for 'change' event
+  // Retrieve the selected region from Chrome extension storage
+  chrome.storage.local.get('selectedRegion', (data) => {
+    if (data.selectedRegion) {
+      regionSelect.value = data.selectedRegion;
+    }
+  });
+
+  // Save the selected region to Chrome extension storage when changed
+  regionSelect.addEventListener('change', () => {
+    const selectedRegion = regionSelect.value;
+    chrome.storage.local.set({ selectedRegion }, () => {
+      // Reload the current page after saving the selected region
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.reload(tabs[0].id);
+      });
+    });
+  });
 });
-
-function saveRegion() {
-  const region = document.getElementById('regionSelector').value;
-  localStorage.setItem('userRegion', region); // TODO change to chrome.storage.local.set
-}
-
-function loadRegion() {
-  const savedRegion = localStorage.getItem('userRegion');
-  if (savedRegion) {
-    document.getElementById('regionSelector').value = savedRegion;
-  }
-}

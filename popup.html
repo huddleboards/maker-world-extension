@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Extension Popup</title>
-    <script src="popup.js" defer></script>
     <style>
       body {
         font-family: 'Comic Neue', Arial, sans-serif;
@@ -51,17 +50,23 @@
         display: block;
         margin-top: 20px;
       }
-      select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        margin-top: 10px;
-      }
     </style>
   </head>
   <body>
     <h1 style="padding-left: 6px">An Unofficial MakerWorld Extension</h1>
+    <div class="container">
+      <h2>Settings</h2>
+      <label for="region-select">Select Region:</label>
+      <select id="region-select">
+        <option value="US">United States (USD)</option>
+        <option value="EU">Europe (EUR)</option>
+        <option value="UK">United Kingdom (GBP)</option>
+        <option value="CA">Canada (CAD)</option>
+        <option value="AU">Australia (AUD)</option>
+        <option value="JP">Japan (JPY)</option>
+        <option value="Global">Global (USD)</option>
+      </select>
+    </div>
     <div class="container">
       <h2>Support & Feedback</h2>
       <p>
@@ -98,17 +103,6 @@
         cause this extension to not work. We will try to keep it updated.
       </p>
     </div>
-    <div class="container">
-      <h2>Select Your Region</h2>
-      <select id="regionSelector">
-        <option value="US">United States (US)</option>
-        <option value="EU">European Union (EU)</option>
-        <option value="UK">United Kingdom (UK)</option>
-        <option value="CA">Canada (CA)</option>
-        <option value="AU">Australia (AU)</option>
-        <option value="JP">Japan (JP)</option>
-        <option value="Global">Global</option>
-      </select>
-    </div>
+    <script src="popup.js"></script>
   </body>
 </html>

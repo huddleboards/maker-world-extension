@@ -5,46 +5,19 @@ function getHandleFromURL() {
   return match ? match[1] : null;
 }
 
-// Function to get the user's selected region from local storage
-function getStoredRegion() {
-  const region = localStorage.getItem('userRegion');
-  return region || 'Global'; // Default to 'Global' if nothing is stored
-}
-
-/**
- * Retrieves the conversion rate for a given region.
- * This includes the number of points required for the base currency amount
- * and the currency symbol.
- *
- * @param {string} region The selected region by the user.
- * @returns {object} An object containing the points needed for the base amount, the base amount, and the currency symbol.
- */
-function getConversionRate(region) {
-  // Define conversion rates for each region
-  const rates = {
-    US: { points: 490, rate: 40, symbol: '$' },
-    EU: { points: 524, rate: 40, symbol: '€' },
-    UK: { points: 535, rate: 35, symbol: '£' },
-    CA: { points: 504, rate: 55, symbol: 'C$' },
-    AU: { points: 511, rate: 65, symbol: 'A$' },
-    JP: { points: 502, rate: 5300, symbol: '¥' },
-    Global: { points: 490, rate: 40, symbol: '$' }, // Assuming Global uses USD
-  };
-
-  // Return the rate for the specified region, or a default value if the region isn't specified
-  return rates[region] || rates['Global'];
-}
-
 // Calculates the reward points based on download and print counts
 function calculatePoints(downloadCount, printCount) {
   const totalDownloads = downloadCount + printCount * 2;
-  const milestones = [10, 20, 30, 40, 50];
-  let points = milestones.reduce((acc, milestone) => {
-    return totalDownloads >= milestone ? acc + 30 : acc;
-  }, 0);
+  let points = 0;
 
-  if (totalDownloads > 50) {
-    points += 25 * Math.floor((totalDownloads - 50) / 25);
+  if (totalDownloads <= 50) {
+    points += Math.floor(totalDownloads / 10) * 15;
+  } else if (totalDownloads <= 500) {
+    points += 5 * 15 + Math.floor((totalDownloads - 50) / 25) * 12;
+  } else if (totalDownloads <= 1000) {
+    points += 5 * 15 + 18 * 12 + Math.floor((totalDownloads - 500) / 50) * 20;
+  } else {
+    points += 5 * 15 + 18 * 12 + 10 * 20 + Math.floor((totalDownloads - 1000) / 100) * 30;
   }
 
   return points;
@@ -55,24 +28,20 @@ function calculatePrintProfileScore(design) {
   let totalPoints = 0;
 
   design.instances.forEach((instance) => {
-    // Calculate the average rating
     const averageRating = instance.ratingScoreTotal / instance.ratingCount;
 
-    // Check if the instance is created by the current user and has an average rating of 4 or higher
     if (instance.instanceCreator.uid === design.designCreator.uid && averageRating >= 4) {
-      // Calculate points based on the given reward structure
       let instancePoints = 0;
       const downloadsEquivalent = instance.downloadCount + instance.printCount * 2;
-      const milestones = [10, 20, 30, 40, 50];
 
-      milestones.forEach((milestone) => {
-        if (downloadsEquivalent >= milestone) {
-          instancePoints += 8; // +8 points for reaching each milestone
-        }
-      });
-
-      if (downloadsEquivalent > 50) {
-        instancePoints += Math.floor((downloadsEquivalent - 50) / 25) * 4; // +4 points for every 25 downloads beyond 50
+      if (downloadsEquivalent <= 50) {
+        instancePoints += Math.floor(downloadsEquivalent / 10) * 3;
+      } else if (downloadsEquivalent <= 500) {
+        instancePoints += 5 * 3 + Math.floor((downloadsEquivalent - 50) / 25) * 3;
+      } else if (downloadsEquivalent <= 1000) {
+        instancePoints += 5 * 3 + 18 * 3 + Math.floor((downloadsEquivalent - 500) / 50) * 5;
+      } else {
+        instancePoints += 5 * 3 + 18 * 3 + 10 * 5 + Math.floor((downloadsEquivalent - 1000) / 100) * 8;
       }
 
       totalPoints += instancePoints;
@@ -171,8 +140,8 @@ const moneySvgPath = 'icons/money.svg';
 const contestSvgPath = 'icons/contest.svg';
 
 // Updates the design card on the page with additional information (Hot Score, Reward Points, Gift Card Value, and Contest Name)
-function updateCardOnPage(design) {
-  const selectedRegion = getStoredRegion(); // Get the region from local storage
+async function updateCardOnPage(design) {
+  const selectedRegion = await getStoredRegion(); // Get the region from local storage
   const { points, rate, symbol } = getConversionRate(selectedRegion);
 
   console.log('Selected Region:', selectedRegion, 'Points:', points, 'Rate:', rate, 'Symbol:', symbol); // Example: "Selected Region: US Points: 490 Rate: 40 Symbol: $
@@ -181,6 +150,7 @@ function updateCardOnPage(design) {
   const printProfilePoints = calculatePrintProfileScore(design);
   const totalPoints = downloadPoints + printProfilePoints;
   const dollarValue = ((totalPoints / points) * rate).toFixed(2);
+  const totalDownloads = design.downloadCount + design.printCount * 2;
 
   // Select the link element that contains the design ID in its href
   const linkSelector = `a[href="/en/models/${design.id}"]`;
@@ -310,6 +280,31 @@ function updateCardOnPage(design) {
       gridContainer.appendChild(downloadRewardsElement);
       gridContainer.appendChild(printProfileRewardsElement);
 
+      // Add the progress bar to display the next reward milestone
+      const progressBarContainer = document.createElement('div');
+      progressBarContainer.style.width = '100%';
+      progressBarContainer.style.backgroundColor = '#e0e0e0';
+      progressBarContainer.style.borderRadius = '8px';
+      progressBarContainer.style.height = '10px';
+
+      const progressBar = document.createElement('div');
+      progressBar.style.height = '10px';
+      progressBar.style.backgroundColor = '#4CAF50';
+      progressBar.style.borderRadius = '8px';
+      progressBar.style.width = '0%';
+
+      progressBarContainer.appendChild(progressBar);
+
+      const downloadsRemaining = document.createElement('span');
+      downloadsRemaining.style.fontSize = '12px';
+      downloadsRemaining.style.color = '#898989';
+      downloadsRemaining.style.paddingLeft = '8px';
+
+      updateProgressBar(progressBar, totalDownloads, downloadsRemaining);
+
+      gridContainer.appendChild(progressBarContainer);
+      gridContainer.appendChild(downloadsRemaining);
+
       // Add the grid container to the card container
       cardContainer.appendChild(gridContainer);
 
@@ -325,6 +320,28 @@ function updateCardOnPage(design) {
         gridContainer.appendChild(contestElement);
       }
     }
+  }
+}
+
+function updateProgressBar(progressBar, totalDownloads, downloadsRemaining) {
+  let nextMilestone, milestoneGap;
+  if (totalDownloads <= 50) {
+    nextMilestone = Math.ceil(totalDownloads / 10) * 10;
+    milestoneGap = 10;
+  } else if (totalDownloads <= 500) {
+    nextMilestone = Math.ceil((totalDownloads - 50) / 25) * 25 + 50;
+    milestoneGap = 25;
+  } else if (totalDownloads <= 1000) {
+    nextMilestone = Math.ceil((totalDownloads - 500) / 50) * 50 + 500;
+    milestoneGap = 50;
+  } else {
+    nextMilestone = Math.ceil((totalDownloads - 1000) / 100) * 100 + 1000;
+    milestoneGap = 100;
+  }
+  let progressPercentage = ((totalDownloads - (nextMilestone - milestoneGap)) / milestoneGap) * 100;
+  progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+  if (downloadsRemaining) {
+    downloadsRemaining.textContent = `${nextMilestone - totalDownloads} more to go`;
   }
 }
 
@@ -360,6 +377,40 @@ async function handleMakerPage(handle) {
   } finally {
     isFetchingMakerData = false;
   }
+}
+
+// Function to get the user's selected region from local storage
+async function getStoredRegion() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('selectedRegion', (data) => {
+      const region = data.selectedRegion || 'Global'; // Default to 'Global' if nothing is stored
+      resolve(region);
+    });
+  });
+}
+
+/**
+ * Retrieves the conversion rate for a given region.
+ * This includes the number of points required for the base currency amount
+ * and the currency symbol.
+ *
+ * @param {string} region The selected region by the user.
+ * @returns {object} An object containing the points needed for the base amount, the base amount, and the currency symbol.
+ */
+function getConversionRate(region) {
+  // Define conversion rates for each region
+  const rates = {
+    US: { points: 490, rate: 40, symbol: '$' },
+    EU: { points: 524, rate: 40, symbol: '€' },
+    UK: { points: 535, rate: 35, symbol: '£' },
+    CA: { points: 504, rate: 55, symbol: 'C$' },
+    AU: { points: 511, rate: 65, symbol: 'A$' },
+    JP: { points: 502, rate: 5300, symbol: '¥' },
+    Global: { points: 490, rate: 40, symbol: '$' }, // Assuming Global uses USD
+  };
+
+  // Return the rate for the specified region, or a default value if the region isn't specified
+  return rates[region] || rates['Global'];
 }
 
 // Sets up a MutationObserver to watch for new design elements and process them accordingly
@@ -490,6 +541,7 @@ function mergeLikesIntoMakerData(makerData, likesData) {
   return makerData;
 }
 
+// Handles the model page by fetching and displaying model-specific information (Reward Points, Gift Card Value)
 // Handles the model page by fetching and displaying model-specific information (Reward Points, Gift Card Value, and Contest Name)
 function handleModelPage(modelId) {
   fetch(`https://makerworld.com/en/models/${modelId}`)
@@ -498,26 +550,28 @@ function handleModelPage(modelId) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlString, 'text/html');
       const scriptTag = doc.getElementById('__NEXT_DATA__');
-
       if (!scriptTag) {
         throw new Error('Could not find the __NEXT_DATA__ script tag in the fetched page.');
       }
-
       const pageData = JSON.parse(scriptTag.textContent || '{}');
       const modelData = pageData.props?.pageProps?.design; // Replace with the correct path to your data
-
       if (modelData && modelData.id.toString() === modelId) {
         const downloadPoints = calculatePoints(modelData.downloadCount, modelData.printCount);
         const printProfilePoints = calculatePrintProfileScore(modelData);
         const totalPoints = downloadPoints + printProfilePoints;
         const pointsToDollarsConversionRate = 40 / 490; // todo - update the conversion rate through a local storage or API call
         const dollarValue = (totalPoints * pointsToDollarsConversionRate).toFixed(2);
-
         // You would select a container element on your model specific page to append this info
         // This should be the element where you want to show the download points and estimated gift card value
         const modelInfoContainer = document.querySelector('.model_info'); // Replace with the correct selector for your page
-
         if (modelInfoContainer) {
+          // Create a container for the download, print, and monetary value
+          const rewardsContainer = document.createElement('div');
+          rewardsContainer.style.display = 'flex';
+          rewardsContainer.style.justifyContent = 'space-between';
+          rewardsContainer.style.alignItems = 'center';
+          rewardsContainer.style.marginBottom = '8px';
+
           const downloadRewardsElement = createStyledElementWithIcon(
             downloadSvgPath,
             'fa-download-class',
@@ -540,9 +594,12 @@ function handleModelPage(modelId) {
             `${dollarValue}`
           );
 
-          modelInfoContainer.appendChild(downloadRewardsElement);
-          modelInfoContainer.appendChild(printProfileRewardsElement);
-          modelInfoContainer.appendChild(monetaryValueElement);
+          rewardsContainer.appendChild(downloadRewardsElement);
+          rewardsContainer.appendChild(printProfileRewardsElement);
+          rewardsContainer.appendChild(monetaryValueElement);
+
+          modelInfoContainer.appendChild(rewardsContainer);
+
           // Add contest information if available
           if (modelData.contest && modelData.contest.contestName) {
             const contestElement = createStyledElementWithIcon(
@@ -553,6 +610,27 @@ function handleModelPage(modelId) {
             );
             modelInfoContainer.appendChild(contestElement);
           }
+
+          // Add the progress bar to display the next reward milestone
+          const progressBarContainer = document.createElement('div');
+          progressBarContainer.style.width = '100%';
+          progressBarContainer.style.backgroundColor = '#e0e0e0';
+          progressBarContainer.style.borderRadius = '8px';
+          progressBarContainer.style.height = '10px';
+          const progressBar = document.createElement('div');
+          progressBar.style.height = '10px';
+          progressBar.style.backgroundColor = '#4CAF50';
+          progressBar.style.borderRadius = '8px';
+          progressBar.style.width = '0%';
+          progressBarContainer.appendChild(progressBar);
+          const downloadsRemaining = document.createElement('span');
+          downloadsRemaining.style.fontSize = '12px';
+          downloadsRemaining.style.color = '#898989';
+          downloadsRemaining.style.paddingLeft = '8px';
+          const totalDownloads = modelData.downloadCount + modelData.printCount * 2;
+          updateProgressBar(progressBar, totalDownloads, downloadsRemaining);
+          modelInfoContainer.appendChild(progressBarContainer);
+          modelInfoContainer.appendChild(downloadsRemaining);
         } else {
           console.error('Could not find the model info container on the page.');
         }
