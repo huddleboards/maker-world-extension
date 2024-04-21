@@ -40,10 +40,3 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-Todos:
--   [ ]  Add a progress indicator to the next reward transaction.
--   [ ]  Add settings to adjust:
-    -   The number of points required to receive a gift card in the user's region.
-    -   The local currency.
-    -   The dollar amount awarded.
