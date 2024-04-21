@@ -460,7 +460,7 @@ function mergeLikesIntoMakerData(makerData, likesData) {
 function handleModelPage(modelId) {
   fetch(`https://makerworld.com/en/models/${modelId}`)
     .then((response) => response.text())
-    .then((htmlString) => {
+    .then(async (htmlString) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlString, 'text/html');
       const scriptTag = doc.getElementById('__NEXT_DATA__');
@@ -476,8 +476,13 @@ function handleModelPage(modelId) {
         const downloadPoints = calculatePoints(modelData.downloadCount, modelData.printCount);
         const printProfilePoints = calculatePrintProfileScore(modelData);
         const totalPoints = downloadPoints + printProfilePoints;
-        const pointsToDollarsConversionRate = 40 / 490; // todo - update the conversion rate through a local storage or API call
-        const dollarValue = (totalPoints * pointsToDollarsConversionRate).toFixed(2);
+
+        // Fetch the selected region and get the conversion rate
+        const selectedRegion = await getStoredRegion(); // Fetch the user's selected region
+        const { points, rate, symbol } = getConversionRate(selectedRegion);
+
+        // Convert points to the dollar or local currency equivalent
+        const dollarValue = ((totalPoints / points) * rate).toFixed(2);
 
         // You would select a container element on your model specific page to append this info
         // This should be the element where you want to show the download points and estimated gift card value
