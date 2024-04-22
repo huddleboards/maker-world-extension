@@ -542,7 +542,6 @@ function mergeLikesIntoMakerData(makerData, likesData) {
 }
 
 // Handles the model page by fetching and displaying model-specific information (Reward Points, Gift Card Value)
-// Handles the model page by fetching and displaying model-specific information (Reward Points, Gift Card Value, and Contest Name)
 function handleModelPage(modelId) {
   fetch(`https://makerworld.com/en/models/${modelId}`)
     .then((response) => response.text())
