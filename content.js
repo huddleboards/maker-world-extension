@@ -324,24 +324,31 @@ async function updateCardOnPage(design) {
 }
 
 function updateProgressBar(progressBar, totalDownloads, downloadsRemaining) {
-  let nextMilestone, milestoneGap;
+  let nextMilestone, milestoneGap, currentMilestone;
   if (totalDownloads <= 50) {
-    nextMilestone = Math.ceil(totalDownloads / 10) * 10;
+    currentMilestone = Math.floor(totalDownloads / 10) * 10;
+    nextMilestone = currentMilestone + 10;
     milestoneGap = 10;
   } else if (totalDownloads <= 500) {
-    nextMilestone = Math.ceil((totalDownloads - 50) / 25) * 25 + 50;
+    currentMilestone = Math.floor((totalDownloads - 50) / 25) * 25 + 50;
+    nextMilestone = currentMilestone + 25;
     milestoneGap = 25;
   } else if (totalDownloads <= 1000) {
-    nextMilestone = Math.ceil((totalDownloads - 500) / 50) * 50 + 500;
+    currentMilestone = Math.floor((totalDownloads - 500) / 50) * 50 + 500;
+    nextMilestone = currentMilestone + 50;
     milestoneGap = 50;
   } else {
-    nextMilestone = Math.ceil((totalDownloads - 1000) / 100) * 100 + 1000;
+    currentMilestone = Math.floor((totalDownloads - 1000) / 100) * 100 + 1000;
+    nextMilestone = currentMilestone + 100;
     milestoneGap = 100;
   }
-  let progressPercentage = ((totalDownloads - (nextMilestone - milestoneGap)) / milestoneGap) * 100;
+
+  let progressPercentage = ((totalDownloads - currentMilestone) / milestoneGap) * 100;
   progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+
   if (downloadsRemaining) {
-    downloadsRemaining.textContent = `${nextMilestone - totalDownloads} more to go`;
+    let remaining = nextMilestone - totalDownloads;
+    downloadsRemaining.textContent = `${remaining} more to go`;
   }
 }
 
