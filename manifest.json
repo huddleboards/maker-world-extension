@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "An Unofficial MakerWorld Assistant",
   "description": "A simple extension adds additional functionality to the Maker World website for designers.",
-  "version": "1.5",
-  "host_permissions": ["https://makerworld.com/*"],
+  "version": "1.7",
+  "host_permissions": ["https://makerworld.com/*", "https://makerworld.com.cn/*"],
   "permissions": ["storage", "activeTab"],
   "action": {
     "default_popup": "popup.html",
@@ -15,7 +15,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://makerworld.com/*"],
+      "matches": ["https://makerworld.com/*", "https://makerworld.com.cn/*"],
       "js": ["content.js", "popup.js"]
     }
   ],
