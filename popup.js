@@ -18,4 +18,27 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  const notificationsEnabled = document.getElementById('notifications-enabled');
+  const notificationFrequency = document.getElementById('notification-frequency');
+
+  // Load saved settings
+  chrome.storage.local.get(['notificationsEnabled', 'notificationFrequency'], (data) => {
+    notificationsEnabled.checked = data.notificationsEnabled ?? true;
+    notificationFrequency.value = data.notificationFrequency ?? '5';
+  });
+
+  // Save settings when changed
+  notificationsEnabled.addEventListener('change', () => {
+    chrome.storage.local.set({ notificationsEnabled: notificationsEnabled.checked });
+  });
+
+  notificationFrequency.addEventListener('change', () => {
+    chrome.storage.local.set({ notificationFrequency: notificationFrequency.value });
+    // Update alarm interval
+    chrome.runtime.sendMessage({ 
+      action: 'updateNotificationInterval', 
+      minutes: parseInt(notificationFrequency.value) 
+    });
+  });
 });

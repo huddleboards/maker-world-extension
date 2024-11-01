@@ -4,7 +4,15 @@
   "description": "A simple extension adds additional functionality to the Maker World website for designers.",
   "version": "1.7",
   "host_permissions": ["https://makerworld.com/*", "https://makerworld.com.cn/*"],
-  "permissions": ["storage", "activeTab"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "notifications",
+    "alarms"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

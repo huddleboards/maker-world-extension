@@ -621,3 +621,8 @@ setInterval(() => {
     checkPageTypeAndLoadData();
   }
 }, 1000);
+
+// Function to manually trigger notification check
+function triggerNotificationCheck() {
+  chrome.runtime.sendMessage({ action: 'checkNotifications' });
+}
